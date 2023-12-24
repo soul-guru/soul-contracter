@@ -1,0 +1,168 @@
+#! /usr/bin/env node
+
+const { program } = require("commander");
+const request = require("request");
+const { readFileSync, writeFileSync, mkdirSync, existsSync } = require("fs");
+const { color } = require("terminal-color");
+const Steps = require("cli-step");
+
+const crypto = require("crypto");
+
+const { md5 } = require("request/lib/helpers");
+const byteSize = require("byte-size");
+const _ = require("lodash");
+const { emojify } = require("node-emoji");
+
+process.removeAllListeners("warning");
+
+const totalNumberOfSteps = 4;
+
+const steps = new Steps(totalNumberOfSteps);
+const step1 = steps.advance("Linting", "white_check_mark");
+
+const step2 = steps.advance("Handshake", "handshake");
+const step3 = steps.advance("Packaging your contract", "mag");
+const step4 = steps.advance("Uploading your contract to SOUL Cloud", "mag");
+
+let target = "http://localhost:911";
+
+if (existsSync(".i2-target")) {
+  target = readFileSync(".i2-target").toString("utf-8");
+}
+
+function encrypt(data, key) {
+  const algorithm = "aes256";
+
+  const cipher = crypto.createCipher(algorithm, key);
+
+  return (
+    cipher.update(data.toString("base64"), "utf8", "hex") + cipher.final("hex")
+  );
+}
+
+program.command("memoryUsage <botId>").action(async (botId) => {
+  request.get(
+    {
+      url: target + "/contracts/allocated?botId=" + botId,
+    },
+    function (error, response, body) {
+      console.log(JSON.parse(body).data);
+
+      console.table(
+        _.chain(JSON.parse(body).data.metric)
+          .toPairs()
+          .map((i) => [i[0], byteSize(i[1]).toString()])
+          .fromPairs()
+          .value(),
+      );
+    },
+  );
+});
+
+program
+  .command("setHttpOver <botId> <secret>")
+  .action(async (botId, secret) => {
+    mkdirSync("~/.i2-auth", { recursive: true });
+    writeFileSync(`~/.i2-auth/.${botId}`, secret);
+  });
+
+program.command("setTargetHost <host>").action(async (host) => {
+  writeFileSync(".i2-target", host);
+});
+
+program.command("push <botId> <contract>").action(async (botId, contract) => {
+  if (!existsSync(`~/.i2-auth/.${botId}`)) {
+    return console.error(
+      color.fg.red(
+        "Before authorizing your agent, the command setHttpOver <botId> <secret>",
+      ),
+    );
+  }
+
+  const httpOver = readFileSync(`~/.i2-auth/.${botId}`);
+
+  step1.start();
+
+  const contractString = readFileSync(contract + ".js", "utf8");
+  const message = crypto.randomBytes(64);
+
+  // const bytes = new TextEncoder().encode(contractString).length;
+  // const percent = (bytes / 3.2e7) * 100;
+
+  // console.log(byteSize(bytes) + " " + percent);
+
+  step1.stop();
+  step2.start();
+
+  request.post(
+    {
+      url: target + "/contracts/pre-validate",
+      json: {
+        botId,
+        p1: encrypt(message.toString("base64"), httpOver),
+        p2: message,
+      },
+    },
+    function (error, response, body) {
+      step2.stop();
+
+      if (body?.challenge === false) {
+        return console.error(
+          color.fg.red(
+            "The handshake is not established, the connection is not secure. The secret (setHttpOver <botId> <secret>) was probably entered incorrectly",
+          ),
+        );
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      step3.start();
+
+      request.post(
+        {
+          url: target + "/contracts/push",
+          json: {
+            botId,
+            data: encrypt(contractString, httpOver),
+            md5: md5(contractString),
+          },
+        },
+        function (error, response, body) {
+          step3.stop();
+
+          console.log("");
+          console.log(color.fg.green(emojify(":cloud: PUBLISH SUCCESSFULLY")));
+          console.log(
+            color.bright(
+              "Your contract has been successfully published and deployed to the Soul virtual contract cloud",
+            ),
+          );
+          console.log(
+            color.bright(
+              "· Please note that now all messages that users write to your agent will be processed by your contract",
+            ),
+          );
+          console.log(
+            color.bright(
+              "· If you want to return to using the classic language preset, simply delete the contract.",
+            ),
+          );
+          console.log(
+            color.bright(
+              "· Please also note that if your agent is posted on the marketplace and your contract frequently receives errors, your agent may be deactivated until you correct the errors",
+            ),
+          );
+          console.log("");
+
+          // const renderedError = pe.render(error);
+          //
+          // console.error(renderedError)
+        },
+      );
+    },
+  );
+});
+
+program.parse();

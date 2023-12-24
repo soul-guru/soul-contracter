@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "target": "ES2022",
+    "module": "CommonJS",
+    "sourceMap": true,
+    "outDir": "./build",
+    "skipLibCheck": true,
+    "removeComments": true // Strips all comments from TypeScript files when converting into JavaScript- you rarely read compiled code so this saves space
+  },
+  "include": ["./**/*.ts", "./**/*.sql"],
+  "exclude": ["node_modules/**/*"]
+}
