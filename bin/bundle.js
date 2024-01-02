@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-const { program } = require("commander");
+const  { program } = require("commander");
 const request = require("request");
 const { readFileSync, writeFileSync, mkdirSync, existsSync } = require("fs");
 const { color } = require("terminal-color");
