@@ -2,6 +2,7 @@ import { Express } from "express";
 import { requireMongoDB } from "../../mongo";
 import { VME } from "../../vm-driver";
 import logger from "../../logger";
+import hashIt from "hash-it";
 
 export default function (app: Express) {
   app.post("/contracts/signal", async function (req, res) {
@@ -23,16 +24,24 @@ export default function (app: Express) {
       ?.getSource(botId)
       .then((contract) => {
         logger.info(
-          `executing contract (signal='${signalId}'): ${JSON.stringify(
+          `executing contract (signal='${signalId}'): ${hashIt(
             contract,
           )}`,
         );
 
-        VME.emit("signal", botId, signalId, signalProps, contract.id);
+        if (contract != null) {
+            VME.emit("signal", botId, signalId, signalProps, contract.id);
 
-        res.json({
-          data: "Signal emitted",
-        });
+            res.json({
+                data: "Signal emitted",
+            });
+        } else {
+            VME.emit("signal", botId, signalId, signalProps, 'default');
+
+            res.json({
+                data: "Signal emitted",
+            });
+        }
       });
   });
 }

@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { requireMongoDB } from "../../mongo";
 import { selectVmOrNull, VME } from "../../vm-driver";
+import CryptoFlow from "../../CryptoFlow";
 
 const { md5 } = require("request/lib/helpers");
 
@@ -13,8 +14,18 @@ export default function (app: Express) {
     if (md5(decrypted) == req.body.md5) {
       await requireMongoDB()
         ?.getContracts()
-        ?.pushContractSource("main", decrypted, req.body.botId);
+        ?.pushContractSource(
+          "main",
+          CryptoFlow.toEncrypted(decrypted),
+          req.body.botId
+        );
+
+
       const vm = selectVmOrNull(String(req.body.botId));
+
+      if (req.body.botId == 'default') {
+        return
+      }
 
       if (vm != null) {
         VME.emit("down", req.body.botId)
@@ -22,6 +33,8 @@ export default function (app: Express) {
         setTimeout(() => {
           VME.emit("up", req.body.botId)
         }, 2500)
+      } else {
+        VME.emit("up", req.body.botId)
       }
 
 

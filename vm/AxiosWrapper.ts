@@ -3,6 +3,8 @@ import util from "util";
 import logger from "../src/logger";
 import {CliColor} from "../src/cli-color";
 
+const appConfig = require("../app.json");
+
 export const axiosClient = axios.create({
 
 })
@@ -29,6 +31,17 @@ axiosClient.interceptors.request.use(function (config) {
   const body = util.inspect(config.data, { showHidden: false, depth: null, colors: true })
 
   logger.info(`${CliColor.BgMagenta}[axios]${CliColor.Reset} -> (${config.method.toLocaleUpperCase()}) ${config.url} ${params} ${body}`)
+
+  for (const host of appConfig.firewall.deny) {
+    if (config.url.indexOf(host) > -1) {
+      return {
+        ...config,
+        url: "/",
+        baseURL: "/"
+      }
+    }
+  }
+
   // Do something before request is sent
   return config;
 }, function (error) {
@@ -38,9 +51,46 @@ axiosClient.interceptors.request.use(function (config) {
 
 
 export default class AxiosWrapper {
-  static methods = [this.get];
+  static methods = [this.request];
 
   static async get(...args) {
-    return axios.get.apply(this, args);
+    return axiosClient.apply(this, args);
   }
+
+  static request(...args) {
+    return new Promise(async (resolve, reject) => {
+      axiosClient.apply(null, args).then(function (result: any) {
+        resolve(JSON.stringify({
+          data: result.data,
+          config: result.config,
+          tip: "Please note this is a stripped-down build for Core-VM, so online response and request data may not be complete"
+        }))
+      }).catch(function (error: any) {
+        reject(JSON.stringify({
+          message: error.message,
+          config: error.config,
+          name: error.name,
+          tip: "Please note this is a stripped-down build for Core-VM, so online response and request data may not be complete",
+          helpers:{
+            errorMessage: error?.response?.data ? error.response.data : null
+          }
+        }))
+      })
+    });
+  }
+}
+
+export const axiosDeterminateRouter = {
+  resolveDialog: ({ dialogId, text }) => {
+    axios
+      .post(
+        process.env.I2_CLUSTER_FLOW +
+        "/service/dialogs/resolve/" +
+        dialogId,
+        {
+          markup: [{ plainText: text }],
+        },
+      )
+      .catch(console.error);
+  },
 }

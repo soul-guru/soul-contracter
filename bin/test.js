@@ -6,6 +6,8 @@
 //   async onSynchronize() {},
 // };
 
+let $worker = {}
+
 const $export = {
   /**
    * @type {import('./types').$export.onBoot}

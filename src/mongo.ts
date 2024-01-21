@@ -4,9 +4,11 @@ import mongoose from "mongoose";
 import { IDependency } from "./interfaces/IDependency";
 import { requireTarget } from "../inject";
 
+const BASE_HOST = process.env.MONGO_BASEHOST || process.env.MONGO_HOST || "127.0.0.1:3132"
+
 export async function createMongoConnection(): Promise<Connection> {
   await mongoose.connect(
-    process.env.MONGO_HOST || "mongodb://127.0.0.1:3131/i2-mcr",
+    process.env.MONGO_HOST || `mongodb://${BASE_HOST}/i2-mcr`,
     {
       connectTimeoutMS: 3000,
     },
@@ -31,7 +33,7 @@ export function mongodbDependency(): IDependency<MongoConnector> {
   return {
     name: "MongoDB",
     requireHosts: [
-      process.env.MONGO_BASEHOST || process.env.MONGO_HOST || "127.0.0.1:3131",
+      BASE_HOST,
     ],
     async instance() {
       const conn = await createMongoConnection();

@@ -143,3 +143,6 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 .idea
+deploy.js
+package-lock.json
+build.zip

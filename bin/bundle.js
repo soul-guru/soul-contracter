@@ -24,7 +24,15 @@ const step2 = steps.advance("Handshake", "handshake");
 const step3 = steps.advance("Packaging your contract", "mag");
 const step4 = steps.advance("Uploading your contract to SOUL Cloud", "mag");
 
-let target = "http://localhost:911";
+let target = undefined;
+let lint = {
+  constraints: [
+    "const $export",
+    "const $worker",
+    "async onBoot()",
+    "async onMessage",
+  ]
+}
 
 if (existsSync(".i2-target")) {
   target = readFileSync(".i2-target").toString("utf-8");
@@ -38,6 +46,14 @@ function encrypt(data, key) {
   return (
     cipher.update(data.toString("base64"), "utf8", "hex") + cipher.final("hex")
   );
+}
+
+function lintSourceCode(data) {
+  lint.constraints.map(e => {
+    if (!data.includes(e)) {
+      throw Error(`Required '${e}' construct not found`)
+    }
+  })
 }
 
 program.command("memoryUsage <botId>").action(async (botId) => {
@@ -73,8 +89,16 @@ program.command("setTargetHost <host>").action(async (host) => {
 program.command("push <botId> <contract>").action(async (botId, contract) => {
   if (!existsSync(`~/.i2-auth/.${botId}`)) {
     return console.error(
-      color.fg.red(
+      color.fg.yellow(
         "Before authorizing your agent, the command setHttpOver <botId> <secret>",
+      ),
+    );
+  }
+
+  if (!existsSync(contract + ".js")) {
+    return console.error(
+      color.fg.yellow(
+        `📁 The ${contract}.js file was not found and cannot be uploaded`,
       ),
     );
   }
@@ -85,6 +109,19 @@ program.command("push <botId> <contract>").action(async (botId, contract) => {
 
   const contractString = readFileSync(contract + ".js", "utf8");
   const message = crypto.randomBytes(64);
+
+  try {
+    lintSourceCode(contractString)
+  } catch (e) {
+    console.log("")
+    console.error(
+        color.fg.yellow(
+            `👮 (${contract + ".js"}): ${e.message}`,
+        ),
+    );
+
+    process.exit(0)
+  }
 
   // const bytes = new TextEncoder().encode(contractString).length;
   // const percent = (bytes / 3.2e7) * 100;

@@ -11,20 +11,23 @@ import {axiosClient} from "./AxiosWrapper";
 export function fillEnv(vm: VM) {
   const base = {
     log: (...arg) => {
-      logger.info(arg.map(i => {
-        return util.inspect(i, { showHidden: false, depth: null, colors: true })
-      }).join(" "), {vm: vm.ID})
-    },
-    network_request_json: (url: string, params: object) => {
-      return Object(fetch(url, params).json());
-    },
-    network_request_raw: (url: string, params: object) => {
-      return String(fetch(url, params).text());
-    },
+      let colorize: (any: any, opt: object) => any
+
+      try {
+        colorize = require('json-colorizer')
+      } catch (e) {
+        colorize = function (any, opt) {
+          return util.inspect(any, { showHidden: false, depth: null, colors: true })
+        }
+      }
+
+      console.log(arg.map(i => {
+        return colorize(i, { pretty: false })
+      }).join(" "), colorize({vm: vm.ID}, {}))
+    }
   }
 
   const lodash = {}
-  const axios_ = {}
 
   _.toPairs(_).map(k => {
     if (typeof k[1] == 'function') {
@@ -32,16 +35,10 @@ export function fillEnv(vm: VM) {
     }
   })
 
-  _.toPairs(axiosClient).map(k => {
-    if (typeof k[1] == 'function') {
-      axios_["axios_" + k[0]] = k[1]
-    }
-  })
 
   return {
     ...base,
     ...lodash,
-    ...axios_
   }
 }
 

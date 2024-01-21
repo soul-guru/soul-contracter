@@ -2,11 +2,12 @@ import _ from "lodash";
 import VM from "../vm/vm";
 import logger from "./logger";
 import {CliColor} from "./cli-color";
-import Bootloader from "./Bootloader";
+import Bootloader from "../vm/Bootloader";
 import EventEmitter from "node:events";
 import { requireMongoDB } from "./mongo";
 const { md5 } = require("request/lib/helpers");
 import { requireClickhouseClient } from "./clickhouse";
+import CryptoFlow from "./CryptoFlow";
 
 /**
  * VMEmitter class extends EventEmitter to handle signals in the virtual machine environment.
@@ -133,14 +134,56 @@ export function deleteVm(name: string): boolean {
 export default () => {
   logger.info("VMEC called");
 
+  const DefaultVM: VM = new VM(512, Bootloader, async function (virtual) {
+    if (await requireMongoDB()?.getContracts()?.count('default') == 0) {
+      await requireMongoDB()
+          ?.getContracts()
+          ?.create("default", "default")
+    }
+
+    const contractDefaultVm = await requireMongoDB()
+        ?.getContracts()
+        ?.getSource("default")
+
+    const actualDefaultVm = contractDefaultVm.branches.find(
+        (i) => i.name === contractDefaultVm.mainBranch,
+    );
+
+    if (actualDefaultVm && typeof actualDefaultVm.source == "string") {
+      logger.info("code for 'default' contract found", {vm: virtual.ID})
+
+      await virtual
+        .compile(actualDefaultVm.source)
+        .then(context => {
+          virtual.bootstrap().then(() => {
+            logger.info(`default contract vm bootstrap up`, { vm: virtual.ID });
+
+            virtual.emitter.on("log", (...args) => {
+              logger.info(String(args), { vm: virtual.ID });
+            });
+
+            virtual.signal("boot");
+          });
+        })
+        .catch(error => logger.error(error.toString(), {vm: DefaultVM.ID}))
+    } else {
+      logger.warn("load any code into the 'default' contract")
+    }
+  })
+
   // Signal event: Triggered when a signal is received for virtual execution
   VME.on("signal", async (botId, signalId, signalProps, contractId) => {
     logger.info(
         `virtual execution received signal '${signalId}' for '${contractId}' contract`,
     );
 
+    if (contractId == 'default') {
+      await DefaultVM.signal(signalId, signalProps)
+      return
+    }
+
     // Get the virtual machine associated with the botId
-    _.get(vm, botId, null)
+    (_.get(vm, botId, null) as VM|null)
         ?.signal(signalId, signalProps)
         ?.then(() =>
             logger.info(
@@ -186,14 +229,14 @@ export default () => {
       );
 
       if (typeof actual?.source === "string") {
-        const virtualMachine = new VM(32, Bootloader, (virtual) => {
+        const virtualMachine = new VM(16, Bootloader, (virtual) => {
           vm[botId] = virtual;
 
           virtual.botId = contract.botId;
           virtual.contractId = contract.id;
 
           virtual // @ts-ignore
-              .compile(actual.source)
+              .compile(CryptoFlow.toDecrypted(actual.source))
               .then(() => {
                 logger.info(`vm '${contract.botId}' is now up`, { vm: virtual.ID });
 
