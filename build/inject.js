@@ -4,11 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireTarget = exports.inject = exports.globalThis = exports.HTTP_BASE_PROTOCOL = void 0;
-const { PerformanceObserver, performance } = require("node:perf_hooks");
-const axios_1 = __importDefault(require("./src/axios"));
-const axios_2 = require("axios");
 const lodash_1 = __importDefault(require("lodash"));
+const axios_1 = __importDefault(require("axios"));
 const logger_1 = __importDefault(require("./src/logger"));
+const axios_2 = require("axios");
+const node_perf_hooks_1 = require("node:perf_hooks");
 exports.HTTP_BASE_PROTOCOL = "http";
 exports.globalThis = require("globalthis")();
 async function inject(dependencies) {
@@ -17,7 +17,7 @@ async function inject(dependencies) {
         const init = dependency.apply(null);
         for (const ip of init.requireHosts) {
             logger_1.default.info(`establish a connection with host '${ip}' as part of checking connections for the container depending on '${dependency.name}' (call: ${init.name})`, { when: "inject" });
-            const pStart = performance.now();
+            const pStart = node_perf_hooks_1.performance.now();
             try {
                 let hostDomain = ip;
                 if (ip.startsWith(exports.HTTP_BASE_PROTOCOL)) {
@@ -38,11 +38,11 @@ async function inject(dependencies) {
                     continue;
                 }
             }
-            logger_1.default.info(`operation 'inject_${dependency.name}' took ${performance.now() - pStart} ms`);
+            logger_1.default.info(`operation 'inject_${dependency.name}' took ${node_perf_hooks_1.performance.now() - pStart} ms`);
         }
         init.bootstrap();
         const instance = await init.instance();
-        await init?.postCreate?.(instance);
+        init?.postCreate?.(instance);
         targets[init.name] = instance;
     }
     exports.globalThis.targets = targets;

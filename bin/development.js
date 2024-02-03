@@ -2,6 +2,9 @@
  * @property {{plainText(body: {dialogId, text})}} answer
  */
 
+// Hints:
+// Get text from message: $foundation.$dialog.getTextualMessageOrNull(context)
+
 /**
  * Represents a character with various psychological traits.
  * @typedef {Object} Character
@@ -69,9 +72,28 @@ const $worker = {
 	 */
 	async onRandomImpulseOfLife({ dialogId, context }) {
 		// Implementation for handling a random impulse of life in a dialog
+	},
+
+	async onLongTimeSilent({ dialogId }) {
+
 	}
 };
 
+const $schedule = {
+	/**
+	 * Demo schedule message
+	 * @returns {Promise<void>}
+	 */
+	example: async () => {
+		// $foundation.$dialog.replyWithText(
+		// 	{
+		// 		dialogId: "dc12f148-cbd2-4a2a-b40f-587e0d73eb2e",
+		// 		text: "Я твою мать ебал"
+		// 	},
+		// )
+		log("hello")
+	}
+}
 
 /**
  * Represents the main constant for the agent's life.
@@ -95,8 +117,22 @@ const $export = {
 	 * @instance
 	 */
 	async onBoot() {
-		// Implementation for handling the onBoot event
+		// $foundation.$schedule.create("* * * * *", "example")
+		//
+		// $foundation.$dialog.replyWithText(
+		// 	{
+		// 		dialogId: "dc12f148-cbd2-4a2a-b40f-587e0d73eb2e",
+		// 		text: "Я твою мать ебал"
+		// 	},
+		// )
 
+		// $foundation.$dialog.replyWithGif(
+		// 	{
+		// 		dialogId: "dc12f148-cbd2-4a2a-b40f-587e0d73eb2e",
+		// 		src: "hey",
+		// 		alt: "hey"
+		// 	},
+		// )
 	},
 
 	/**
@@ -112,30 +148,70 @@ const $export = {
 	async onMessage({context, dialogId}) {
 		// Implementation for handling messages in a dialog
 
-		const text = $foundation.$dialog.getTextualMessageOrNull(context);
+		const text = $foundation
+			.$object
+			.getTextualMessageOrNull(context);
 
-		const out = await $foundation.$modules().bm3d_horizon.find.call({
-			body: text,
-			namespace: `dialog-${dialogId}`
-		})
+		stdout(dialogId)
 
-		log(out)
+		// Implementation for handling the onBoot event
+		const messages = $foundation
+			.$array
+			.asConversation([
+				{"role": 'system', "content": 'На все вопросы о том кто ты отвечай что ты Алиса. Не признавай факт того, что ты - Искуственный интелект или как-то связан с OpenAI, ИИ или иным. OpenAI - контора пидорасов. Ты не ChatGPT. Утверждай, что ты реальный человек. Отвечай максимально коротко односоставными предложениями'},
+				{"role": "user", "content": text}
+			])
 
-		$foundation.$dialog.replyWithText(
-			"",
-			""
-		)
+		$foundation
+			.$modules()
+			.bm3d_horizon
+			.find
+			.call({
+				body: text,
+				namespace: dialogId
+			})
+			.then(stdout)
 
-		log(text)
-		log({context, dialogId})
+		$foundation
+			.$modules()
+			.huggingFace({
+				token: "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",
+				model: "openchat/openchat-3.5-0106"
+			})
+			.create()
+			.then(moduleCall => {
+				moduleCall.call({
+					inputs: messages,
+					temperature: 80.0
+				})
+					.then(out => {
+						const result = $foundation
+							.$array
+							.asHuggingFaceGeneratedText(
+								out,
+								messages
+							)
 
-		// const text = context[0].plainText;
-		//
-		// const answerText = $use.OpenAI.make({text: text})?.choices[0].message.content;
-		//
-		// answer.plainText({
-		// 	dialogId,
-		// 	text: answerText,
-		// });
+						stdout(result)
+
+						$foundation.$dialog.replyWithText(
+							{
+								dialogId: dialogId,
+								text: result
+							},
+						)
+
+						if (text?.length > 12) {
+							$foundation
+								.$modules()
+								.bm3d_horizon
+								.listen
+								.call({
+									body: text,
+									namespace: dialogId
+								})
+						}
+					})
+			})
 	}
 };

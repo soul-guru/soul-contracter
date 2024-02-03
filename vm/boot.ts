@@ -10,20 +10,11 @@ import {axiosClient} from "./AxiosWrapper";
 
 export function fillEnv(vm: VM) {
   const base = {
-    log: (...arg) => {
-      let colorize: (any: any, opt: object) => any
-
-      try {
-        colorize = require('json-colorizer')
-      } catch (e) {
-        colorize = function (any, opt) {
-          return util.inspect(any, { showHidden: false, depth: null, colors: true })
-        }
-      }
-
-      console.log(arg.map(i => {
-        return colorize(i, { pretty: false })
-      }).join(" "), colorize({vm: vm.ID}, {}))
+    log: (arg) => {
+      logger.info(
+        util.inspect(arg, { showHidden: false, depth: null, colors: true }),
+        {vm: vm.ID}
+      )
     }
   }
 

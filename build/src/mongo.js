@@ -4,8 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireMongoDB = exports.mongodbDependency = exports.MongoConnector = exports.createMongoConnection = void 0;
-const contracts_1 = require("./models/contracts");
 const mongoose_1 = __importDefault(require("mongoose"));
+const contracts_1 = require("./models/contracts");
 const inject_1 = require("../inject");
 const BASE_HOST = process.env.MONGO_BASEHOST || process.env.MONGO_HOST || "127.0.0.1:3132";
 async function createMongoConnection() {

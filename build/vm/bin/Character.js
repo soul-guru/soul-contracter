@@ -1,4 +1,7 @@
-let $character = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.$character = void 0;
+exports.$character = {
     empathy: Math.random(),
     optimism: Math.random(),
     resilience: Math.random(),

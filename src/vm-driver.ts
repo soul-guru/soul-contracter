@@ -1,13 +1,13 @@
+import md5 from "md5";
 import _ from "lodash";
 import VM from "../vm/vm";
 import logger from "./logger";
-import {CliColor} from "./cli-color";
-import Bootloader from "../vm/Bootloader";
+import CryptoFlow from "./CryptoFlow";
 import EventEmitter from "node:events";
 import { requireMongoDB } from "./mongo";
-const { md5 } = require("request/lib/helpers");
+import Bootloader from "../vm/Bootloader";
+import {CliColor} from "./classes/cli-color";
 import { requireClickhouseClient } from "./clickhouse";
-import CryptoFlow from "./CryptoFlow";
 
 /**
  * VMEmitter class extends EventEmitter to handle signals in the virtual machine environment.
@@ -171,7 +171,7 @@ export default () => {
     }
   })
 
-  // Signal event: Triggered when a signal is received for virtual execution
+  // Signal event: Triggered when a signal.ts is received for virtual execution
   VME.on("signal", async (botId, signalId, signalProps, contractId) => {
     logger.info(
         `virtual execution received signal '${signalId}' for '${contractId}' contract`,
@@ -201,7 +201,7 @@ export default () => {
   });
 
   // Down event: Triggered when a virtual machine is taken down
-  VME.on("down", async (botId) => {
+  VME.on("down", async (botId, onVirtualMachineDown = null) => {
     if (!vm[botId]) {
       logger.warn(`virtual machine ${botId} does not exist`);
       return;
@@ -212,6 +212,16 @@ export default () => {
     if (vmLocal instanceof VM) {
       await vmLocal.destroyMachine();
     }
+
+    vm[botId] = null
+
+    delete vm[botId]
+
+    if (vmLocal.isDisposed()) {
+      vmLocal = null
+      onVirtualMachineDown?.()
+    }
+
   });
 
   // Up event: Triggered when a virtual machine is brought up

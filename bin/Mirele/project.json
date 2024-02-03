@@ -1,0 +1,20 @@
+{
+  "name": "untitled",
+  "createdAt": "1/25/2024, 2:10:52 AM",
+  "version": 1,
+  "remote": "https://tools.souls.guru",
+  "include": [
+    "src/main.ts"
+  ],
+  "vmCore": {
+    "compatible": 1,
+    "ram": 32
+  },
+  "versionControl": {
+    "branch": "main"
+  },
+  "auth": {
+    "botId": "53271888-53fc-4360-9213-4fd8b250013f",
+    "httpOverKey": "a787fcb6fdd733510a851b3038928808bcb90af9b8f42f6505845076252801a2eec7765ab030bcb7546d104c20b4a29e"
+  }
+}

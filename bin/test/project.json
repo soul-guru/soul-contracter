@@ -1,0 +1,28 @@
+{
+  "name": "untitled",
+  "remote": "https://api.souls.guru",
+  "createdAt": "2/3/2024, 8:26:49 PM",
+  "version": 1,
+  "include": [
+    "src/main.ts"
+  ],
+  "vmCore": {
+    "compatible": 1,
+    "ram": 32
+  },
+  "versionControl": {
+    "branch": "main"
+  },
+  "rollup": {
+    "writer": {
+      "file": ".built.js",
+      "format": "module",
+      "strict": true,
+      "minifyInternalExports": false
+    }
+  },
+  "auth": {
+    "botId": "123",
+    "httpOverKey": "123"
+  }
+}

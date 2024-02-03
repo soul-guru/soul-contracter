@@ -12,6 +12,7 @@ const { md5 } = require("request/lib/helpers");
 const byteSize = require("byte-size");
 const _ = require("lodash");
 const { emojify } = require("node-emoji");
+const {basename} = require("path");
 
 process.removeAllListeners("warning");
 
@@ -23,6 +24,22 @@ const step1 = steps.advance("Linting", "white_check_mark");
 const step2 = steps.advance("Handshake", "handshake");
 const step3 = steps.advance("Packaging your contract", "mag");
 const step4 = steps.advance("Uploading your contract to SOUL Cloud", "mag");
+
+const strings = {
+  afterSetOverKey: "Great! You're ready to start working with your agent code. To create a contract file, enter\n" +
+    "\n" +
+    color.fg.green(`${basename(process.mainModule.filename)} wizard <file_name_without_ext>`),
+
+  afterSetTargetHost: "A small step for a big cause has been successfully taken!\n" +
+    "\n" +
+    "Now you need to save your HTTP keys to upload your contracts to the cloud. You can get the keys on the website, in the \"Development\" section:\n" +
+    "\n" +
+    color.fg.green(`${basename(process.mainModule.filename)} setHttpOver <bot_id> <httpover_key>`),
+
+  needAuthHttpOver: color.fg.yellow(
+    "Before authorizing your agent, the command setHttpOver <botId> <secret>",
+  )
+}
 
 let target = undefined;
 let lint = {
@@ -38,6 +55,13 @@ if (existsSync(".i2-target")) {
   target = readFileSync(".i2-target").toString("utf-8");
 }
 
+/**
+ * Encrypts the provided data using the AES 256 algorithm.
+ *
+ * @param data - The data to be encrypted, either a string or a Buffer.
+ * @param key - The encryption key used for the AES algorithm.
+ * @returns The encrypted data in hexadecimal format.
+ */
 function encrypt(data, key) {
   const algorithm = "aes256";
 
@@ -46,6 +70,32 @@ function encrypt(data, key) {
   return (
     cipher.update(data.toString("base64"), "utf8", "hex") + cipher.final("hex")
   );
+}
+
+function _getCallerFile() {
+  var filename;
+
+  var _pst = Error.prepareStackTrace
+  Error.prepareStackTrace = function (err, stack) { return stack; };
+  try {
+    var err = new Error();
+    var callerfile;
+    var currentfile;
+
+    currentfile = err.stack.shift().getFileName();
+
+    while (err.stack.length) {
+      callerfile = err.stack.shift().getFileName();
+
+      if(currentfile !== callerfile) {
+        filename = callerfile;
+        break;
+      }
+    }
+  } catch (err) {}
+  Error.prepareStackTrace = _pst;
+
+  return filename;
 }
 
 function lintSourceCode(data) {
@@ -80,25 +130,27 @@ program
   .action(async (botId, secret) => {
     mkdirSync("~/.i2-auth", { recursive: true });
     writeFileSync(`~/.i2-auth/.${botId}`, secret);
+
+    console.log(strings.afterSetOverKey)
   });
 
 program.command("setTargetHost <host>").action(async (host) => {
   writeFileSync(".i2-target", host);
+
+  console.log(strings.afterSetTargetHost)
 });
 
 program.command("push <botId> <contract>").action(async (botId, contract) => {
   if (!existsSync(`~/.i2-auth/.${botId}`)) {
     return console.error(
-      color.fg.yellow(
-        "Before authorizing your agent, the command setHttpOver <botId> <secret>",
-      ),
+      strings.needAuthHttpOver
     );
   }
 
   if (!existsSync(contract + ".js")) {
     return console.error(
       color.fg.yellow(
-        `📁 The ${contract}.js file was not found and cannot be uploaded`,
+        `📁 The '${contract}.js' file was not found and cannot be uploaded`,
       ),
     );
   }

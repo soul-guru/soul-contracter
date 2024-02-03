@@ -4,22 +4,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteVm = exports.selectVmOrNull = exports.vm = exports.VME = void 0;
+const md5_1 = __importDefault(require("md5"));
 const lodash_1 = __importDefault(require("lodash"));
 const vm_1 = __importDefault(require("../vm/vm"));
 const logger_1 = __importDefault(require("./logger"));
-const cli_color_1 = require("./cli-color");
-const Bootloader_1 = __importDefault(require("../vm/Bootloader"));
+const CryptoFlow_1 = __importDefault(require("./CryptoFlow"));
 const node_events_1 = __importDefault(require("node:events"));
 const mongo_1 = require("./mongo");
-const { md5 } = require("request/lib/helpers");
+const Bootloader_1 = __importDefault(require("../vm/Bootloader"));
+const cli_color_1 = require("./classes/cli-color");
 const clickhouse_1 = require("./clickhouse");
 class VMEmitter extends node_events_1.default {
     on(eventName, listener) {
-        logger_1.default.info(`VME registered ON signal '${String(eventName)}' with listener ${md5(String(listener))}`);
+        logger_1.default.info(`VME registered ON signal '${String(eventName)}' with listener ${(0, md5_1.default)(String(listener))}`);
         return super.on(eventName, listener);
     }
     once(eventName, listener) {
-        logger_1.default.info(`VME registered ONCE signal '${String(eventName)}' with listener ${md5(String(listener))}`);
+        logger_1.default.info(`VME registered ONCE signal '${String(eventName)}' with listener ${(0, md5_1.default)(String(listener))}`);
         return super.once(eventName, listener);
     }
     emit(eventName, ...args) {
@@ -103,7 +104,7 @@ exports.default = () => {
             (0, clickhouse_1.requireClickhouseClient)()?.insertContractError(error, botId, contractId, "UP");
         });
     });
-    exports.VME.on("down", async (botId) => {
+    exports.VME.on("down", async (botId, onVirtualMachineDown = null) => {
         if (!exports.vm[botId]) {
             logger_1.default.warn(`virtual machine ${botId} does not exist`);
             return;
@@ -111,6 +112,12 @@ exports.default = () => {
         let vmLocal = exports.vm[botId];
         if (vmLocal instanceof vm_1.default) {
             await vmLocal.destroyMachine();
+        }
+        exports.vm[botId] = null;
+        delete exports.vm[botId];
+        if (vmLocal.isDisposed()) {
+            vmLocal = null;
+            onVirtualMachineDown?.();
         }
     });
     exports.VME.on("up", async (botId) => {
@@ -127,7 +134,7 @@ exports.default = () => {
                     virtual.botId = contract.botId;
                     virtual.contractId = contract.id;
                     virtual
-                        .compile(actual.source)
+                        .compile(CryptoFlow_1.default.toDecrypted(actual.source))
                         .then(() => {
                         logger_1.default.info(`vm '${contract.botId}' is now up`, { vm: virtual.ID });
                         virtual.bootstrap().then(() => {

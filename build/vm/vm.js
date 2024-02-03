@@ -1,23 +1,46 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const isolated_vm_1 = require("isolated-vm");
-const boot_1 = __importDefault(require("./boot"));
-const node_fs_1 = require("node:fs");
-const uniqid_1 = __importDefault(require("uniqid"));
-const node_events_1 = __importDefault(require("node:events"));
-const clickhouse_1 = require("../src/clickhouse");
-const fs_1 = require("fs");
-const axios_1 = __importDefault(require("axios"));
-const logger_1 = __importDefault(require("../src/logger"));
-const Bootloader_1 = __importDefault(require("../vm/Bootloader"));
-const hash_it_1 = __importDefault(require("hash-it"));
 const lodash_1 = __importDefault(require("lodash"));
-const AxiosWrapper_1 = __importDefault(require("./AxiosWrapper"));
+const uniqid_1 = __importDefault(require("uniqid"));
+const hash_it_1 = __importDefault(require("hash-it"));
+const fs_1 = require("fs");
+const node_fs_1 = require("node:fs");
+const logger_1 = __importDefault(require("../src/logger"));
 const hoek_1 = require("@hapi/hoek");
-const parent_schedule_1 = require("../src/parent-schedule");
+const boot_1 = __importDefault(require("./boot"));
+const node_events_1 = __importDefault(require("node:events"));
+const schedule_1 = __importDefault(require("../src/schedule"));
+const Bootloader_1 = __importDefault(require("../vm/Bootloader"));
+const moment_1 = __importDefault(require("moment/moment"));
+const clickhouse_1 = require("../src/clickhouse");
+const isolated_vm_1 = require("isolated-vm");
+const AxiosWrapper_1 = __importStar(require("./AxiosWrapper"));
 class VMEmitter extends node_events_1.default {
     on(eventName, listener) {
         logger_1.default.info(`attached VMEmitter: @${String(eventName)}`);
@@ -41,6 +64,7 @@ class VM {
     jobs = [];
     ID;
     emitter = new VMEmitter();
+    startupAt;
     set botId(value) {
         this._botId = value;
     }
@@ -51,9 +75,12 @@ class VM {
         logger_1.default.info(`creating cron job for '0 0 * * *'`, {
             vm: this.ID,
         });
-        this.jobs.push(parent_schedule_1.schedule.scheduleJob('0 0 * * *', () => {
+        this.jobs.push(schedule_1.default.scheduleJob('0 0 * * *', async () => {
             if (!this.isDisposed()) {
-                this.context.evalClosure(`safeSignal('onNewDay', $worker)`);
+                logger_1.default.info(`⏰ bzzzin! new day!`, {
+                    vm: this.ID,
+                });
+                await this.context.evalClosure(`safeSignal('onNewDay', $export.$worker)`);
             }
         }));
     }
@@ -62,6 +89,7 @@ class VM {
         this.bootloader = bootloader;
         this.onReady = onReady;
         this.ID = (0, uniqid_1.default)();
+        this.startupAt = (0, moment_1.default)();
         logger_1.default.info("creating VM", { vm: this.ID });
         if (!(0, fs_1.existsSync)(bootloader.sysFile)) {
             logger_1.default.error(bootloader.sysFile + " not found");
@@ -122,40 +150,57 @@ class VM {
         for (const pair of lodash_1.default.toPairs(this.bootableIsolated.env)) {
             await context.global.set(pair[0], pair[1]);
         }
-        await context.evalClosure(`
-    (function() {
-        axios = {
-            get: function (...args) {
-                return $0.apply(undefined, args, { arguments: { copy: true }, result: { promise: true } });
-            }
-        };
-    })();    
-`, AxiosWrapper_1.default.methods, { arguments: { reference: true } });
         context.evalClosureSync(`
-      globalThis.console = {
-        log: $0,
+      globalThis.exports = {}
+      globalThis.require = (path) => {
+        log("import: " + path)
       }
       
-      globalThis.answer = {
-        plainText: $1,
+      globalThis.SYSTEM = {
+        createScheduleJob: $1,
+        answerPlainText: $0,
+        answerGif: $2,
+      }
+      
+      globalThis.axiosDeterminateRouter = {
+        resolveDialog: $0,
       }
     `, [
-            (...args) => this.emitter.emit("log", args),
-            ({ dialogId, text }) => {
-                axios_1.default
-                    .post(process.env.I2_CLUSTER_FLOW +
-                    "/service/dialogs/resolve/" +
-                    dialogId, {
-                    markup: [{ plainText: text }],
-                })
-                    .catch(console.error);
+            AxiosWrapper_1.axiosDeterminateRouter.resolveDialog,
+            (jobTime, name) => {
+                logger_1.default.info(`registered cron job for '${jobTime}'`, {
+                    vm: this.ID,
+                });
+                if (this.jobs.length > 12) {
+                    logger_1.default.info(`too many jobs`, {
+                        vm: this.ID,
+                    });
+                    (0, clickhouse_1.requireClickhouseClient)()
+                        ?.insertContractError(Error("Too many jobs"), this._botId, this._contractId, "REGISTER")
+                        .catch(console.error);
+                    return null;
+                }
+                this.jobs.push(schedule_1.default.scheduleJob(jobTime, () => {
+                    if (!this.isDisposed()) {
+                        logger_1.default.info(`⏰ bzzzin! call '${jobTime}'`, {
+                            vm: this.ID,
+                        });
+                        this.context.evalClosure(`safeSignal('name', $export.$schedule)`);
+                    }
+                }));
             },
+            AxiosWrapper_1.axiosDeterminateRouter.resolveDialogWithGif,
         ]);
+        context.evalClosureSync(`
+      globalThis._SYSTEM_AXIOS = {
+        axios: async function (args) {
+            return JSON.parse(await $0.apply(undefined, [{vmid: '${this.ID}', args}], { arguments: { copy: true }, result: { promise: true } }));
+        }
+      }
+    `, [
+            AxiosWrapper_1.default.methods[0]
+        ], { arguments: { reference: true }, result: { reference: true, promise: true } });
         return context;
-    }
-    async refreshContext() {
-        await this.context.release();
-        this.context = await this.createContext();
     }
     isDisposed() {
         if (this.isolate == null) {
@@ -164,10 +209,11 @@ class VM {
         return this.isolate.isDisposed;
     }
     async destroyMachine() {
+        this.emitter.removeAllListeners("log");
         this.emitter.removeAllListeners("signal");
         this.emitter.removeAllListeners("boot");
         this.emitter.removeAllListeners("message");
-        logger_1.default.info("[DESTROY] removed all: signal, boot, message listeners", { vm: this.ID });
+        logger_1.default.info("[DESTROY] removed all: signal.ts, boot, log, message listeners", { vm: this.ID });
         this.context.release();
         this.isolate.dispose();
         logger_1.default.info("[DESTROY] The content and the virtual machine were destroyed at the level of rejecting referencing objects inside the machine", { vm: this.ID });
@@ -190,6 +236,9 @@ class VM {
     async bootstrap() {
         this.emitter.on("boot", () => {
             this.captureErrorRunnable(this.context.evalClosure(`safeSignal('onBoot', $export)`));
+        });
+        this.emitter.on("log", (data) => {
+            logger_1.default.info(data);
         });
         this.emitter.on("message", (objects) => {
             if (lodash_1.default.isArray(objects)) {
@@ -219,7 +268,16 @@ class VM {
             }
             catch (error) {
                 if (error instanceof Error) {
-                    logger_1.default.error(error.message);
+                    let colorize;
+                    try {
+                        colorize = require('json-colorizer');
+                    }
+                    catch (e) {
+                        colorize = function (any) {
+                            return any;
+                        };
+                    }
+                    logger_1.default.error(colorize(error.message));
                     (0, clickhouse_1.requireClickhouseClient)()
                         ?.insertContractError(error, this._botId, this._contractId, "EVENT")
                         .catch(console.error);

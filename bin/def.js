@@ -114,9 +114,9 @@ const $export = {
 
         const answerText = $use.OpenAI.make({text: text})?.choices[0].message.content;
 
-        answer.plainText({
-            dialogId,
-            text: answerText,
-        });
+        // answer.plainText({
+        //     dialogId,
+        //     text: answerText,
+        // });
     }
 };

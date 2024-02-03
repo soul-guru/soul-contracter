@@ -1,20 +1,19 @@
-import {Context, Isolate, IsolateOptions, Reference} from "isolated-vm";
-import getBootableISO from "./boot";
-import { readFile } from "node:fs";
-import uniqid from "uniqid";
-
-import EventEmitter from "node:events";
-import { requireClickhouseClient } from "../src/clickhouse";
-import { existsSync } from "fs";
-import axios from "axios";
-import logger from "../src/logger";
-import Bootloader from "../vm/Bootloader";
-import hashIt from "hash-it";
-import {IBootableIso} from "../src/interfaces/IBootableIso";
 import _ from "lodash";
-import AxiosWrapper, {axiosDeterminateRouter} from "./AxiosWrapper";
+import uniqid from "uniqid";
+import hashIt from "hash-it";
+import { existsSync } from "fs";
+import { readFile } from "node:fs";
+import logger from "../src/logger";
 import {flatten} from "@hapi/hoek";
-import {schedule} from "../src/parent-schedule";
+import getBootableISO from "./boot";
+import EventEmitter from "node:events";
+import schedule from "../src/schedule";
+import Bootloader from "../vm/Bootloader";
+import moment, {Moment} from "moment/moment";
+import { requireClickhouseClient } from "../src/clickhouse";
+import {IBootableIso} from "../src/interfaces/IBootableIso";
+import {Context, Isolate, IsolateOptions} from "isolated-vm";
+import AxiosWrapper, {axiosDeterminateRouter} from "./AxiosWrapper";
 
 /**
  * A custom EventEmitter class that extends the built-in EventEmitter.
@@ -70,6 +69,7 @@ export default class VM {
 
   public readonly ID: string;
   public readonly emitter = new VMEmitter();
+  public readonly startupAt: Moment
 
   set botId(value: string) {
     this._botId = value;
@@ -89,11 +89,14 @@ export default class VM {
       vm: this.ID,
     });
 
-
     this.jobs.push(
-      schedule.scheduleJob('0 0 * * *', () => {
+      schedule.scheduleJob('0 0 * * *', async () => {
         if (!this.isDisposed()) {
-          this.context.evalClosure(`safeSignal('onNewDay', $worker)`)
+          logger.info(`⏰ bzzzin! new day!`, {
+            vm: this.ID,
+          });
+
+          await this.context.evalClosure(`safeSignal('onNewDay', $export.$worker)`)
         }
       })
     );
@@ -105,6 +108,8 @@ export default class VM {
     readonly onReady: (vm: VM) => void = () => {}
   ) {
     this.ID = uniqid();
+
+    this.startupAt = moment()
 
     logger.info("creating VM", {vm: this.ID});
 
@@ -198,25 +203,17 @@ export default class VM {
       await context.global.set(pair[0], pair[1]);
     }
 
-    // context.evalClosureSync(
-    //     `globalThis.layer = (arg) => $0.apply(null, [arg], { result: { promise: true } });`,
-    //     [ new Reference(async (arg) => {
-    //       return (await axiosClient.get(arg))
-    //     })]
-    // );
-
-    context.evalClosureSync(`
-    (function() {
-        axios = async function (...args) {
-            return JSON.parse(await $0.apply(undefined, args, { arguments: { copy: true }, result: { promise: true } }));
-        };
-    })();    
-`, AxiosWrapper.methods, {arguments: {reference: true}, result: {reference: true, promise: true}});
-
     context.evalClosureSync(
       `
-      globalThis.answer = {
-        plainText: $0,
+      globalThis.exports = {}
+      globalThis.require = (path) => {
+        log("import: " + path)
+      }
+      
+      globalThis.SYSTEM = {
+        createScheduleJob: $1,
+        answerPlainText: $0,
+        answerGif: $2,
       }
       
       globalThis.axiosDeterminateRouter = {
@@ -224,17 +221,56 @@ export default class VM {
       }
     `,
       [
-        axiosDeterminateRouter.resolveDialog
+        axiosDeterminateRouter.resolveDialog,
+        (jobTime: string | number | schedule.RecurrenceRule | schedule.RecurrenceSpecDateRange | schedule.RecurrenceSpecObjLit | Date, name: any) => {
+          logger.info(`registered cron job for '${jobTime}'`, {
+            vm: this.ID,
+          });
+
+          if (this.jobs.length > 12) {
+            logger.info(`too many jobs`, {
+              vm: this.ID,
+            });
+
+            requireClickhouseClient()
+              ?.insertContractError(Error("Too many jobs"), this._botId, this._contractId, "REGISTER")
+              .catch(console.error);
+
+            return null
+          }
+
+
+          this.jobs.push(
+            schedule.scheduleJob(jobTime, () => {
+              if (!this.isDisposed()) {
+                logger.info(`⏰ bzzzin! call '${jobTime}'`, {
+                  vm: this.ID,
+                });
+
+                this.context.evalClosure(`safeSignal('name', $export.$schedule)`)
+              }
+            })
+          );
+        },
+        axiosDeterminateRouter.resolveDialogWithGif,
+      ]
+    );
+
+    context.evalClosureSync(
+      `
+      globalThis._SYSTEM_AXIOS = {
+        axios: async function (args) {
+            return JSON.parse(await $0.apply(undefined, [{vmid: '${this.ID}', args}], { arguments: { copy: true }, result: { promise: true } }));
+        }
+      }
+    `,
+      [
+        AxiosWrapper.methods[0]
       ],
+      {arguments: {reference: true}, result: {reference: true, promise: true}}
     );
 
     return context;
-  }
-
-  public async refreshContext() {
-    await this.context.release()
-
-    this.context = await this.createContext()
   }
 
   public isDisposed() {
@@ -256,7 +292,7 @@ export default class VM {
     this.emitter.removeAllListeners("signal");
     this.emitter.removeAllListeners("boot");
     this.emitter.removeAllListeners("message");
-    logger.info("[DESTROY] removed all: signal, boot, log, message listeners", {vm: this.ID})
+    logger.info("[DESTROY] removed all: signal.ts, boot, log, message listeners", {vm: this.ID})
 
     this.context.release();
     this.isolate.dispose();
@@ -322,9 +358,9 @@ export default class VM {
   }
 
   /**
-   * Emits a signal within the VM. If to isolate is disposed, logs an error.
-   * @param signal - The signal to emit.
-   * @param props - Additional properties to pass with the signal.
+   * Emits a signal.ts within the VM. If to isolate is disposed, logs an error.
+   * @param signal - The signal.ts to emit.
+   * @param props - Additional properties to pass with the signal.ts.
    * @returns null if to isolate is disposed, otherwise the result of the emitter.emit function.
    */
   public async signal(signal: string, props: any | null = null) {

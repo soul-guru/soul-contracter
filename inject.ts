@@ -1,11 +1,9 @@
-const { PerformanceObserver, performance } = require("node:perf_hooks");
-
-import axios from "./src/axios";
-import { AxiosError } from "axios";
-import { color } from "terminal-color";
-import { IDependency } from "./src/interfaces/IDependency";
 import _ from "lodash";
+import axios from "axios";
 import logger from "./src/logger";
+import { AxiosError } from "axios";
+import {performance} from "node:perf_hooks";
+import { IDependency } from "./src/interfaces/IDependency";
 
 export const HTTP_BASE_PROTOCOL = "http";
 
@@ -63,7 +61,7 @@ export async function inject(dependencies: {
 
     init.bootstrap();
     const instance = await init.instance();
-    await init?.postCreate?.(instance);
+    init?.postCreate?.(instance);
     targets[init.name] = instance;
   }
 

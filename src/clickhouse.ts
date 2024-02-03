@@ -60,7 +60,7 @@ export class ClickHouse {
       error: Error,
       botId: string,
       contractId: string,
-      when_do: "UP" | "EVENT",
+      when_do: "UP" | "EVENT" | "REGISTER",
   ) {
     await this.clickhouseClient.insert({
       table: "vm_contracts_logs",

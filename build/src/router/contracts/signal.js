@@ -15,7 +15,7 @@ function default_1(app) {
         if (!["message"].includes(signalId)) {
             logger_1.default.info(`signal declined: ${signalId} -> ${botId}`);
             return res.status(400).json({
-                data: "Unauthorized signal sent",
+                data: "Unauthorized signal.ts sent",
             });
         }
         logger_1.default.info(`signal accepted: ${signalId} -> ${botId}`);

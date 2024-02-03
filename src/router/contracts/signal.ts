@@ -13,7 +13,7 @@ export default function (app: Express) {
     if (!["message"].includes(signalId)) {
       logger.info(`signal declined: ${signalId} -> ${botId}`);
       return res.status(400).json({
-        data: "Unauthorized signal sent",
+        data: "Unauthorized signal.ts sent",
       });
     }
 

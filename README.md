@@ -9,7 +9,7 @@ alt="Size Limit logo by Anton Lovchikov" width="80" height="80">
 
 <br/>
 
-## Module principles ☝️
+## Call principles ☝️
 - CE dependent project, stores information in database, creates memory area, short term, long term, V8 memory
 - CE is obliged to run any contract as isolated as possible
 - CE is required to report everything that happens in the system

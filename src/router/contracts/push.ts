@@ -24,15 +24,16 @@ export default function (app: Express) {
       const vm = selectVmOrNull(String(req.body.botId));
 
       if (req.body.botId == 'default') {
-        return
+        return res.status(400).json({
+          validMd5: md5(decrypted) == req.body.md5,
+          vmRestarted: 0,
+        });
       }
 
       if (vm != null) {
-        VME.emit("down", req.body.botId)
-
-        setTimeout(() => {
+        VME.emit("down", req.body.botId, () => {
           VME.emit("up", req.body.botId)
-        }, 2500)
+        })
       } else {
         VME.emit("up", req.body.botId)
       }

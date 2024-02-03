@@ -24,6 +24,26 @@ export class Contracts {
     return await this.schema.find({}).lean().exec();
   }
 
+  async updateIncomingTrafficUsage(botId: string, incBytes: number) {
+    return await this.schema.updateOne({
+      botId
+    }, {
+      $inc: {
+        netIncomingTrafficBytes: incBytes
+      }
+    }).lean().exec();
+  }
+
+  async updateOutcomingTrafficUsage(botId: string, incBytes: number) {
+    return await this.schema.updateOne({
+      botId
+    }, {
+      $inc: {
+        netOutcomingTrafficBytes: incBytes
+      }
+    }).lean().exec();
+  }
+
   // Retrieve contracts by owner
   async getAllByOwner(owner: string) {
     return await this.schema.find({ owner }).lean().exec();

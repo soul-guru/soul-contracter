@@ -18,6 +18,24 @@ class Contracts {
     async getAll() {
         return await this.schema.find({}).lean().exec();
     }
+    async updateIncomingTrafficUsage(botId, incBytes) {
+        return await this.schema.updateOne({
+            botId
+        }, {
+            $inc: {
+                netIncomingTrafficBytes: incBytes
+            }
+        }).lean().exec();
+    }
+    async updateOutcomingTrafficUsage(botId, incBytes) {
+        return await this.schema.updateOne({
+            botId
+        }, {
+            $inc: {
+                netOutcomingTrafficBytes: incBytes
+            }
+        }).lean().exec();
+    }
     async getAllByOwner(owner) {
         return await this.schema.find({ owner }).lean().exec();
     }
