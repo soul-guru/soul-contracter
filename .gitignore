@@ -150,3 +150,5 @@ build.zip
 yarn.lock
 .cryptoflow
 .cryptoflow-its-true
+
+dist

@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 
 # Use changes to package.json to force Docker not to use the cache
 # when we change our application’s nodejs dependencies:
-COPY package.json ./
+COPY . .
 COPY run.sh ./
 
 # Make run.sh executable
@@ -52,7 +52,5 @@ RUN source $NVM_DIR/nvm.sh \
 
 RUN source $NVM_DIR/nvm.sh \
     npm install
-
-COPY . .
 
 CMD /usr/src/app/run.sh
