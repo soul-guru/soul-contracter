@@ -3,6 +3,9 @@ FROM debian:latest
 # Create app directory
 WORKDIR /usr/src/app
 
+# Make run.sh executable
+RUN chmod +x /usr/src/app/run.sh
+
 COPY . .
 
 # This line for support 'source'
@@ -47,6 +50,4 @@ RUN source $NVM_DIR/nvm.sh \
 RUN source $NVM_DIR/nvm.sh \
     npm install
 
-ADD script.sh /usr/src/app/run.sh
-
-CMD [ "./script"]
+CMD /usr/src/app/run.sh
