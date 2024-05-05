@@ -4,6 +4,9 @@ FROM ubuntu:latest
 ENV NVM_DIR /usr/local/nvm
 ENV NODE_VERSION 18
 
+# Create NVM directory
+RUN mkdir -p /usr/local/nvm
+
 # Install dependencies
 RUN apt update && apt upgrade -y 
 RUN apt install -y wget curl 
