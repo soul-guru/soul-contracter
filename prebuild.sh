@@ -1,0 +1,2 @@
+npx ncc build ./src/main.ts --minify --transpile-only --asset-builds -C --target es2016 -o dist/ -d
+npx pkg --compress GZip -t node18-linux-arm64,node18-macos-arm64 dist/index.js --options expose-gc --debug --assets dist/out/isolated_vm.node --out-dir dist
