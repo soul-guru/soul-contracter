@@ -15,7 +15,20 @@ alt="Size Limit logo by Anton Lovchikov" width="80" height="80">
 - CE is required to report everything that happens in the system
 
 ### Get started
-```shell
-ts-node src/main.ts serve --vmec --vmec-up-start-up --http --use-example-contract
+##### Install as binary 
 
+```shell
+git clone https://github.com/soul-guru/soul-contracter
+
+cd soul-contracter
+
+npm install
+
+ts-node src/main.ts serve --vmec --vmec-up-start-up --http --use-example-contract
 ```
+
+##### Install though Docker
+```shell
+docker pull masloffvs/soul-ce:main
+```
+ 
