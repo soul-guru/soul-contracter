@@ -47,4 +47,6 @@ RUN source $NVM_DIR/nvm.sh \
 RUN source $NVM_DIR/nvm.sh \
     npm install
 
-CMD [ "source", "$NVM_DIR/nvm.sh", "&&", "npm", "run", "start"]
+ADD script.sh /usr/src/app/run.sh
+
+CMD [ "./script"]
