@@ -49,7 +49,7 @@
     "git-http-backend": "^1.1.2",
     "globalthis": "^1.0.3",
     "hash-it": "^6.0.0",
-    "isolated-vm": "4.6.0",
+    "isolated-vm": "4.7.2",
     "json-colorizer": "^2.2.2",
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
@@ -87,8 +87,7 @@
     "winston": "^3.11.0",
     "winston-timestamp-colorize": "^1.1.0",
     "ws": "^8.17.0",
-    "yargonaut": "^1.1.4",
-    "zod": "^3.22.4"
+    "yargonaut": "^1.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
