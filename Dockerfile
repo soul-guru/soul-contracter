@@ -4,6 +4,6 @@ WORKDIR /usr/src/app
 
 COPY . .
 
-RUN /bin/bash npm install
+RUN npm install
 
 CMD [ "npm", "start"]
