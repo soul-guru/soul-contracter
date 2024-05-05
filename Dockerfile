@@ -17,7 +17,7 @@ RUN mkdir -p /usr/local/nvm
 
 # Install dependencies
 RUN apt update && apt upgrade -y 
-RUN apt install -y wget curl 
+RUN apt install -y wget curl make g++
 
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -47,4 +47,4 @@ RUN source $NVM_DIR/nvm.sh \
 RUN source $NVM_DIR/nvm.sh \
     npm install
 
-CMD [ "npm", "run", "start"]
+CMD [ "source", "$NVM_DIR/nvm.sh", "&&", "npm", "run", "start"]
