@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM debian:latest
 
 # NVM environment variables
 ENV NVM_DIR /usr/local/nvm
