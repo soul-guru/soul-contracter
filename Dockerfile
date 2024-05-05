@@ -3,7 +3,10 @@ FROM debian:latest
 # Create app directory
 WORKDIR /usr/src/app
 
-COPY . .
+# Use changes to package.json to force Docker not to use the cache
+# when we change our application’s nodejs dependencies:
+COPY package.json ./
+COPY run.sh ./
 
 # Make run.sh executable
 RUN chmod +x /usr/src/app/run.sh
@@ -49,5 +52,7 @@ RUN source $NVM_DIR/nvm.sh \
 
 RUN source $NVM_DIR/nvm.sh \
     npm install
+
+COPY . .
 
 CMD /usr/src/app/run.sh
