@@ -146,3 +146,7 @@ dist
 deploy.js
 package-lock.json
 build.zip
+
+yarn.lock
+.cryptoflow
+.cryptoflow-its-true

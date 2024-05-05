@@ -18,6 +18,13 @@ alt="Size Limit logo by Anton Lovchikov" width="80" height="80">
 ##### Install as binary 
 
 ```shell
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+nvm install 18
+nvm use 18
+
+# Install this code
 git clone https://github.com/soul-guru/soul-contracter
 
 cd soul-contracter
@@ -26,6 +33,8 @@ npm install
 
 ts-node src/main.ts serve --vmec --vmec-up-start-up --http --use-example-contract
 ```
+
+But, why nvm? Answer: your system can be ARM/AMD and nvm can install node special for your system architecture.
 
 ##### Install though Docker
 ```shell
