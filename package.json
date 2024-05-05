@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx -y nodemon --exec npx -y ts-node src/main.ts serve --http --vmec-up-start-up --vmec --use-example-contract",
+    "start": "npx -y nodemon --exec npx -y ts-node --transpile-only src/main.ts serve --http --vmec-up-start-up --vmec --use-example-contract",
     "machine": "npm run buildVmSys && ts-node src/main.ts machine bin/development.js",
     "build": "/bin/bash ./build.sh",
     "deploy": "npm run build && rm -f build.zip && cd build && zip -r ../build.zip . ",
@@ -12,7 +12,17 @@
   },
   "keywords": [],
   "author": "",
+  "bin": "dist/index.js",
   "license": "ISC",
+  "pkg": {
+    "scripts": "dist/index.js",
+    "assets": "dist/out/**/*",
+    "targets": [
+      "node18-linux-arm64",
+      "node18-macos-arm64"
+    ],
+    "outputPath": "dist"
+  },
   "dependencies": {
     "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
