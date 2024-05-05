@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import axios from "axios";
 import util from "util";
 import logger from "../src/logger";
@@ -6,8 +5,6 @@ import {CliColor} from "../src/classes/cli-color";
 import {requireMongoDB} from "../src/mongo";
 import {selectVmOrNull} from "../src/vm-driver";
 import {assert} from "../src/classes/assert";
-
-dotenv.config()
 
 assert(() => process.env.I2_CLUSTER_FLOW)
 

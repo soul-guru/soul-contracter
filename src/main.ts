@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import logger from "./logger";
 import {program} from "commander";
 import * as fs from "fs";
@@ -24,8 +23,6 @@ export const importDynamic = new Function('modulePath', 'return import(modulePat
 
   console.log(result.data);
 })()
-
-dotenv.config();
 
 const PATH_CRYPTOFLOW = ".cryptoflow";
 const PATH_KEY_VALIDATION = ".cryptoflow-its-true";
