@@ -3,7 +3,7 @@ import { selectVmOrNull } from "../../vm-driver";
 
 export default function (app: Express) {
   app.get("/contracts/allocated", async function (req, res) {
-    const metric = await selectVmOrNull(String(req.query.botId))?.metric();
+    const metric = await selectVmOrNull(String(req.query.botId))?.getHeapStatistics();
     const workTimeInSeconds: BigInt = selectVmOrNull(
         String(req.query.botId)
     )?.workTime();

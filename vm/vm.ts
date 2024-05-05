@@ -12,7 +12,7 @@ import Bootloader from "../vm/Bootloader";
 import moment, {Moment} from "moment/moment";
 import { requireClickhouseClient } from "../src/clickhouse";
 import {IBootableIso} from "../src/interfaces/IBootableIso";
-import {Context, Isolate, IsolateOptions} from "isolated-vm";
+import {Context, HeapStatistics, Isolate, IsolateOptions} from "isolated-vm";
 import AxiosWrapper, {axiosDeterminateRouter} from "./AxiosWrapper";
 
 /**
@@ -49,7 +49,9 @@ class VMEmitter extends EventEmitter {
      * @param eventName - The name of the emitted event.
      * @param args - The arguments passed to the event.
      */
-    logger.info(`(:${String(eventName)}) ------> @ (${hashIt(args)})`);
+    if (eventName != 'onHeartbeat') {
+      logger.info(`(:${String(eventName)}) ------> @ (${hashIt(args)})`);
+    }
 
     // Trigger the event and call registered listeners
     return super.emit(eventName, ...args);
@@ -64,6 +66,7 @@ export default class VM {
   private context: Context = undefined;
   private _botId: string;
   private _contractId: string;
+  private _hearbeatId: NodeJS.Timeout;
 
   private jobs = []
 
@@ -100,6 +103,15 @@ export default class VM {
         }
       })
     );
+  }
+
+  
+  private setupHearbeat() {
+    this._hearbeatId = setInterval(async () => {
+      this.signal("onHeartbeat", {
+        time: new Date()
+      })  
+    }, 1000)
   }
 
   constructor(
@@ -169,6 +181,7 @@ export default class VM {
             );
 
             this.initDaemon()
+            this.setupHearbeat()
 
             this.isReady = true;
             logger.info(`VM ready`, { vm: this.ID });
@@ -180,7 +193,13 @@ export default class VM {
   }
 
 
-  public metric() {
+  /**
+   * Returns the current heap statistics of the VM.
+   * For more information, see:
+   * https://nodejs.org/api/v8.html#v8_v8_getheapstatistics
+   * @return {HeapStatistics} The current heap statistics of the VM
+   */
+  public getHeapStatistics() {
     return this.isolate.getHeapStatisticsSync();
   }
 
@@ -288,6 +307,8 @@ export default class VM {
    * be considered non-functional.
    */
   public async destroyMachine(): Promise<void> {
+    clearInterval(this._hearbeatId)
+
     this.emitter.removeAllListeners("log");
     this.emitter.removeAllListeners("signal");
     this.emitter.removeAllListeners("boot");
@@ -341,6 +362,18 @@ export default class VM {
       logger.info(data)
     });
 
+    /**
+     * Emits a shell signal within the VM.
+     */
+    this.emitter.on("shell", (data) => {
+      this.captureErrorRunnable(
+        this.context.evalClosure(`safeSignal('onShell', $export, \`${encodeURIComponent(data)}\`)`),
+      );
+    });
+
+    /**
+     * Emits a message signal within the VM.
+     */
     this.emitter.on("message", (objects) => {
       if (_.isArray(objects)) {
         for (const object of _.flatten(objects)) {
@@ -365,7 +398,10 @@ export default class VM {
    */
   public async signal(signal: string, props: any | null = null) {
     if (!this.isolate.isDisposed) {
-      logger.info(`(:${signal}) ------> ${this.ID}`, {vm: this.ID});
+      if (signal != 'onHeartbeat') {
+        logger.info(`(:${signal}) ------> ${this.ID}`, {vm: this.ID});
+      }
+ 
       return this.emitter.emit(signal, props);
     } else {
       logger.error(`WARNING! VM '${this._botId}' IS DOWN WHEN GET SIGNAL`);

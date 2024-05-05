@@ -66,7 +66,7 @@ class Informator {
 
 const DEFAULT_PROJECT_FILE_CONTENT = {
   name: 'untitled',
-  remote: 'https://api.souls.guru',
+  remote: 'http://localhost:911',
   createdAt: (new Date()).toLocaleString(),
   version: Built.VERSION,
   include: [
@@ -174,6 +174,8 @@ class Flow {
       process.exit(1); // Exit the program with an error code
     }
 
+    Informator.log('debug', '🔎 Reading project.json ...')
+
     const json = parse(fs.readFileSync(jsonPath).toString());
 
     if (!_.get(json, 'rollup.writer')) {
@@ -185,6 +187,10 @@ class Flow {
       Informator.error("The 'include' property is not found in the project.json file. Please make sure the file exists in the current directory and contains the necessary configuration.");
       process.exit(1); // Exit the program with an error code
     }
+
+    _.get(json, 'include', []).map(i => path.normalize(path.join(options.cwd || process.cwd(), i))).map(file => {
+      Informator.log('debug', `📦 Adding '${path.basename(file)}' ...`)
+    })
 
     rollup.rollup({
       input: _.get(json, 'include', []).map(i => path.normalize(path.join(options.cwd || process.cwd(), i))),
@@ -204,13 +210,17 @@ class Flow {
       treeshake: false,
       external: ['$foundation', 'stdout'],
     }).then(roll => {
+      const pathForOutput = path.join(options.cwd || process.cwd(), _.get(json, 'rollup.writer.file'))
+
+      Informator.log('debug', '📦 Bundling into ' + pathForOutput + ' ...')
+
       roll
         .write({
           ..._.get(json, 'rollup.writer'),
-          file: path.join(options.cwd, _.get(json, 'rollup.writer.file'))
+          file: pathForOutput
         })
         .then(built => {
-          Informator.log('debug', `🔨 Done!`)
+          Informator.log('debug', '📦 Done!')
 
           for (const builtElement of built.output) {
             builtElement.moduleIds.map(i => {
@@ -325,6 +335,46 @@ class Flow {
       }
     );
   }
+
+  /**
+   * Create a new contract on the remote host.
+   * @description The function prompts the user for the bot ID and the owner of the contract.
+   * Then, it sends a POST request to the remote host to create the contract.
+   * If the contract is created successfully, the function logs a message and exits the program.
+   * Otherwise, it logs an error message and exits the program with an error code.
+   */
+  static createContract() {
+    const botId = prompt("Bot ID: "); // eslint-disable-line no-console
+    const owner = prompt("Owner: "); // eslint-disable-line no-console
+
+    request.post(
+      {
+        url: DEFAULT_PROJECT_FILE_CONTENT.remote + "/contracts/create",
+        json: {
+          botId,
+          owner
+        },
+      },
+      function (error, message) {
+        if (error) {
+          Informator.error("Contract creation failed");
+          process.exit(1);
+        }
+
+        if (message.statusCode == 201 || message.statusCode == 200) {
+          Informator.log('success', "Contract created successfully"); // eslint-disable-line no-console
+          Informator.log('info', JSON.stringify(message.body.data, null, 2));
+        
+        } else {
+          Informator.error("While creating contract something went wrong"); // eslint-disable-line no-console
+          Informator.log('info', JSON.stringify(message.body, null, 2));
+        
+        }
+
+        process.exit(1);
+      }
+    );    
+  }
 }
 
 program
@@ -423,10 +473,13 @@ program
   .version('1.0.0')
   .action((options) => {
     Flow.buildProject(() => {
+      Informator.log('info', '🛫 Built successfully.');
+
       Flow.validateAuthProps(() => {
-        console.log(2)
+        Informator.log('info', '🛫 Pushing project...');
+      
         Flow.uploadSourceCode(() => {
-          console.log(3)
+          Informator.log('info', '🪐 Well done!');
         }, options)
       }, options)
     }, options)
@@ -470,6 +523,14 @@ program
     }, {
       cwd: options.cwd
     })
+  })
+
+program
+  .command('create')
+  .description("Create project in cloud")
+  .version('1.0.0')
+  .action((options) => {
+    Flow.createContract()
   })
 
 program

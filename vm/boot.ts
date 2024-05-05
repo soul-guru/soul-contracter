@@ -6,15 +6,33 @@ import logger from "../src/logger";
 import util from "util";
 import _ from "lodash";
 import {axiosClient} from "./AxiosWrapper";
+import { broadcast } from "../src/socket";
 
 
 export function fillEnv(vm: VM) {
   const base = {
+    /**
+     *  Send a message to the logger
+     * @param arg 
+     */
     log: (arg) => {
       logger.info(
         util.inspect(arg, { showHidden: false, depth: null, colors: true }),
         {vm: vm.ID}
       )
+    },
+
+    /**
+     *  Send a message to the websocket
+     * @param arg 
+     */
+    websocketSend: (arg) => {
+      logger.info(
+        "send message to ws: " + util.inspect(arg, { showHidden: false, depth: null, colors: true }),
+        {vm: vm.ID}
+      )
+
+      broadcast(arg)
     }
   }
 

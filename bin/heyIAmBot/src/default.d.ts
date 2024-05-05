@@ -8,6 +8,8 @@ declare const $schedule = {
 
 }
 
+declare function websocketSend(data: any)
+
 /**
  * Represents the `$foundation` object providing various utility functions and modules.
  */

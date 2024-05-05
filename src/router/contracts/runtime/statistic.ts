@@ -8,7 +8,7 @@ export default (app: Express) => {
   app.get("/contracts/runtime/statistic", async function (req, res) {
     const metric = Object.values(vm).map(instance => ({
       id: instance.ID,
-      metric: instance.metric(),
+      metric: instance.getHeapStatistics(),
       uptime: instance.startupAt.diff(moment()),
       workTime: instance.workTime().toString()
     }))

@@ -17235,7 +17235,7 @@ function occurrences(string, subString, allowOverlapping) {
     }
     return n;
 }
-var STDOUT_SYS_BANNER = "░▄▀▀░▀▄▀░▄▀▀░░░█▒█░█▄▒▄█░▒░░▄▀▀░▄▀▄▒█▀▄▒██▀\n" +
+var STDOUT_SYS_BANNER = "\n░▄▀▀░▀▄▀░▄▀▀░░░█▒█░█▄▒▄█░▒░░▄▀▀░▄▀▄▒█▀▄▒██▀\n" +
     "▒▄██░▒█▒▒▄██▒░░▀▄▀░█▒▀▒█░▀▀░▀▄▄░▀▄▀░█▀▄░█▄▄";
 stdout(STDOUT_SYS_BANNER);
 /**
@@ -17406,10 +17406,10 @@ var Call = /** @class */ (function () {
      * @param headers
      * @returns {Promise<any>} A promise that resolves with the response data.
      */
-    Call.prototype.call = function (body, headers) {
-        if (headers === void 0) { headers = {}; }
-        return __awaiter(this, void 0, void 0, function () {
+    Call.prototype.call = function (body_1) {
+        return __awaiter(this, arguments, void 0, function (body, headers) {
             var config;
+            if (headers === void 0) { headers = {}; }
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -17587,7 +17587,7 @@ $foundation = {
                 }
                 return [];
             })
-                .join("") + "\n";
+                .join("<|end_of_turn|>") + "\n";
         },
     },
     /**

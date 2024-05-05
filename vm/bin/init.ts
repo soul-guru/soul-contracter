@@ -5,6 +5,16 @@ export function stdout(out: string) {
   log(out)
 }
 
+export function stderr(out: string) {
+  // @ts-ignore
+  log(out)
+}
+
+export function websocketSend(data: any) {
+  // @ts-ignore
+  websocketSend(data)
+}
+
 /** Function that count occurrences of a substring in a string;
  * @param {String} string               The string
  * @param {String} subString            The sub string to search for
@@ -34,19 +44,18 @@ export function occurrences(string: string, subString: string, allowOverlapping:
   return n;
 }
 
-const STDOUT_SYS_BANNER = "░▄▀▀░▀▄▀░▄▀▀░░░█▒█░█▄▒▄█░▒░░▄▀▀░▄▀▄▒█▀▄▒██▀\n" +
-  "▒▄██░▒█▒▒▄██▒░░▀▄▀░█▒▀▒█░▀▀░▀▄▄░▀▄▀░█▀▄░█▄▄";
+const STDOUT_SYS_BANNER = "\n░▄▀▀░▀▄▀░▄▀▀░░░█▒█░█▄▒▄█░▒░░▄▀▀░▄▀▄▒█▀▄▒██▀\n" +
+"▒▄██░▒█▒▒▄██▒░░▀▄▀░█▒▀▒█░▀▀░▀▄▄░▀▄▀░█▀▄░█▄▄";
 
 stdout(STDOUT_SYS_BANNER)
 
 const self = this
 
-/**
+/** 
  * @return {{require('axios').default}}
  */
 //@ts-ignore
 let systemNetworkAsAxios = () => SYSTEM.axios
-
 
 /**
  * Represents the OpenAI class for interacting with the OpenAI API.

@@ -80,7 +80,7 @@ export function machine(program: Command) {
                 const raw = prompt("Message: ")
                 logger.info(session.evalClosureSync(`return JSON.stringify(safeSignal('onMessage', $export, {context: [{ plainText: '${raw}' }]}))`))
               } else if (text == "mem") {
-                const metricVm = util.inspect(vm.metric(), {
+                const metricVm = util.inspect(vm.getHeapStatistics(), {
                   showHidden: false,
                   depth: null,
                   colors: true,
@@ -92,7 +92,7 @@ export function machine(program: Command) {
                   colors: true,
                 });
 
-                const p = (vm.metric().used_heap_size /
+                const p = (vm.getHeapStatistics().used_heap_size /
                   getHeapStatistics().used_heap_size) * 100;
 
                 logger.info("VM: " + metricVm, { vm: vm.ID });

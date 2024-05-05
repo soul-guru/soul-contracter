@@ -10,7 +10,7 @@ export default function (app: Express) {
     const signalProps = req.body.signalProps || {};
     const botId = req.body.botId || null;
 
-    if (!["message"].includes(signalId)) {
+    if (!["message", "shell"].includes(signalId)) {
       logger.info(`signal declined: ${signalId} -> ${botId}`);
       return res.status(400).json({
         data: "Unauthorized signal.ts sent",

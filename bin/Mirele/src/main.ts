@@ -15,6 +15,10 @@ const $export: SoulExports = {
     })
   },
 
+  async onHeartbeat({time: Date}) {
+    
+  },
+
   async onMessage({context, dialogId}) {
     await $use.openDialog.call({context, dialogId})
   }

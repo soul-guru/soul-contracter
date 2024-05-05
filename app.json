@@ -5,5 +5,8 @@
     "deny": [
       "vk.com"
     ]
+  },
+  "wegSocket": {
+    "port": 119
   }
 }

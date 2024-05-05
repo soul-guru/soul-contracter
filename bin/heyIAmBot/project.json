@@ -1,0 +1,28 @@
+{
+  "name": "untitled",
+  "remote": "http://localhost:911",
+  "createdAt": "05.05.2024, 03:51:19",
+  "version": 1,
+  "include": [
+    "src/main.ts"
+  ],
+  "vmCore": {
+    "compatible": 1,
+    "ram": 32
+  },
+  "versionControl": {
+    "branch": "main"
+  },
+  "rollup": {
+    "writer": {
+      "file": ".built.js",
+      "format": "module",
+      "strict": true,
+      "minifyInternalExports": false
+    }
+  },
+  "auth": {
+    "botId": "9",
+    "httpOverKey": "f6d4fb1961735c4f6450929351225b5b16262c6d824a17df26505833e1304c15352ac69d6fface0f3cc0c37d47c53a92"
+  }
+}

@@ -1,7 +1,7 @@
 import {ModulesKit} from "./ModulesKit";
 
 const self: object = this
-
+ 
 /**
  * The `$foundation` object contains various utility functions and methods.
  */
