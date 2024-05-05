@@ -38,9 +38,13 @@ RUN ln -sf NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/bin/node
 RUN ln -sf NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/bin/npm
 
 # confirm installation
-RUN node -v
-RUN npm -v
+RUN source $NVM_DIR/nvm.sh \
+    node -v
 
-RUN npm install
+RUN source $NVM_DIR/nvm.sh \
+    npm -v
+
+RUN source $NVM_DIR/nvm.sh \
+    npm install
 
 CMD [ "npm", "run", "start"]
