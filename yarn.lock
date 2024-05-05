@@ -4790,10 +4790,10 @@
   "resolved" "https://registry.npmjs.org/isobject/-/isobject-3.0.1.tgz"
   "version" "3.0.1"
 
-"isolated-vm@4.6.0":
-  "integrity" "sha512-MEnfC/54q5PED3VJ9UJYJPOlU6mYFHS3ivR9E8yeNNBEFRFUNBnY0xO4Rj3D/SOtFKPNmsQp9NWUYSKZqAoZiA=="
-  "resolved" "https://registry.npmjs.org/isolated-vm/-/isolated-vm-4.6.0.tgz"
-  "version" "4.6.0"
+"isolated-vm@4.7.2":
+  "integrity" "sha512-JVEs5gzWObzZK5+OlBplCdYSpokMcdhLSs/xWYYxmYWVfOOFF4oZJsYh7E/FmfX8e7gMioXMpMMeEyX1afuKrg=="
+  "resolved" "https://registry.npmjs.org/isolated-vm/-/isolated-vm-4.7.2.tgz"
+  "version" "4.7.2"
   dependencies:
     "prebuild-install" "^7.1.1"
 
@@ -7512,6 +7512,3 @@
     "cliui" "^2.1.0"
     "decamelize" "^1.0.0"
     "window-size" "0.1.0"
-
-"zod@^3.22.4":
-  "version" "3.22.4"
