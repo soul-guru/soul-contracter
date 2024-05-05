@@ -1,5 +1,8 @@
 FROM debian:latest
 
+# This line for support 'source'
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
 # NVM environment variables
 ENV NVM_DIR /usr/local/nvm
 ENV NODE_VERSION 18
