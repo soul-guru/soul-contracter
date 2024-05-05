@@ -3,10 +3,10 @@ FROM debian:latest
 # Create app directory
 WORKDIR /usr/src/app
 
+COPY . .
+
 # Make run.sh executable
 RUN chmod +x /usr/src/app/run.sh
-
-COPY . .
 
 # This line for support 'source'
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
