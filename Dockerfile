@@ -1,5 +1,9 @@
 FROM ubuntu:latest
 
+# Install dependencies
+RUN apt update && apt upgrade 
+RUN apt install wget curl 
+
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 RUN nvm install 18
