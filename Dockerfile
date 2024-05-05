@@ -31,11 +31,6 @@ ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 # Apply bashrc
 RUN source /root/.bashrc
 
-# Load NVM
-RUN export NVM_DIR="$HOME/.nvm" 
-RUN [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
-RUN [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion
-
 WORKDIR /usr/src/app
 
 COPY . .
