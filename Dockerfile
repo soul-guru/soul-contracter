@@ -45,9 +45,10 @@ RUN ln -sf NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/bin/npm
 
 # confirm installation
 RUN source $NVM_DIR/nvm.sh \
-    node -v \
-    npm -v \
-    npm install -g yarn \
-    yarn
+    echo $(node -v) \
+    echo $(npm -v)
+
+RUN source $NVM_DIR/nvm.sh \
+    echo $(npm ls)
 
 CMD /usr/src/app/run.sh
