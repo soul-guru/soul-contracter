@@ -9,9 +9,26 @@ export const HTTP_BASE_PROTOCOL = "http";
 
 export const globalThis = require("globalthis")(); // returns native globalThis if compliant
 
-export async function inject(dependencies: {
-  [key: string]: () => IDependency<any>;
-}) {
+/**
+ * Inject function to initialize and configure dependencies.
+ *
+ * This function takes an object where the keys are the dependency names and the
+ * values are functions that return an {@link IDependency} object. The function
+ * will iterate over the dependency functions, check if the hosts are
+ * responding, and then call the bootstrap and instance functions of the
+ * dependency.
+ *
+ * The function also creates a Proxy object that allows you to access the
+ * instances of the injected dependencies as if they were on the global scope.
+ *
+ * @param {Object.<string, () => IDependency<any>>} dependencies - An object with keys as dependency names and values as functions that return an {@link IDependency} object.
+ * @returns {Proxy<Object.<string, any>>} A proxy object that allows you to access the instances of the injected dependencies as if they were on the global scope.
+ */
+export async function inject(
+  dependencies: {
+    [key: string]: () => IDependency<any>;
+  },
+): Promise<Proxy<{ [key: string]: any }>> {
   const targets = {};
 
   for (const dependency of _.chain(dependencies).values().value()) {
@@ -45,8 +62,8 @@ export async function inject(dependencies: {
           logger.error(
             `attention! The dependency '${dependency.name}' is not satisfied because the host ${ip} does not respond to the ping command`,
           );
-          if (process.env['STRICT'] != 'false') {
-            process.exit(1)
+          if (process.env["STRICT"] != "false") {
+            process.exit(1);
           }
           continue;
         }
@@ -68,15 +85,35 @@ export async function inject(dependencies: {
   globalThis.targets = targets;
 
   return new Proxy(targets, {
+    /**
+     * Getter for the proxy object that allows you to access the instances of the
+     * injected dependencies as if they were on the global scope.
+     *
+     * @param {Object} target - The target object.
+     * @param {string|symbol} p - The property to get from the target object.
+     * @param {*} receiver - The receiver of the get operation.
+     * @returns {*} The value of the property from the target object.
+     */
     get(target: {}, p: string | symbol, receiver: any): any {
       return targets[p];
     },
 
+    /**
+     * Setter for the proxy object that throws an error if the user tries to
+     * write to the proxy object.
+     *
+     * @param {Object} target - The target object.
+     * @param {string|symbol} p - The property to set on the target object.
+     * @param {*} newValue - The new value to set on the property.
+     * @param {*} receiver - The receiver of the set operation.
+     * @returns {boolean} Always returns false.
+     */
     set(target: {}, p: string | symbol, newValue: any, receiver: any): boolean {
       throw "Cannot write";
     },
   });
 }
+
 
 export function requireTarget<T>(name: string): T | null {
   return globalThis.targets[name] || null;

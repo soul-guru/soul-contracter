@@ -46,7 +46,13 @@ RUN ln -sf $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/bin/nodejs
 RUN ln -sf $NVM_DIR/versions/node/v$NODE_VERSION/bin/node /usr/bin/node
 RUN ln -sf $NVM_DIR/versions/node/v$NODE_VERSION/bin/npm /usr/bin/npm
 
+# Environment variables
+ENV I2_CLUSTER_FLOW=1
+ENV VENDOR='Docker Image'
+ENV DEVELOPER='Wireforce'
+
 # confirm installation
+RUN npm install -g yarn
 RUN npm install
 RUN npm ls
 
