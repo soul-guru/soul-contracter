@@ -1,4 +1,4 @@
-FROM debian:latest
+FROM debian:trixie
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -23,7 +23,8 @@ RUN mkdir -p /usr/local/nvm
 
 # Install dependencies
 RUN apt update && apt upgrade -y 
-RUN apt install -y wget curl make g++
+RUN apt install -y wget curl make g++ python3
+RUN apt install -y python3-pip
 
 # Install NVM
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
