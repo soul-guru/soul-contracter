@@ -53,7 +53,7 @@ ENV DEVELOPER='Wireforce'
 
 # confirm installation
 RUN npm install -g yarn
-RUN npm install
+RUN yarn
 RUN npm ls
 
 CMD /usr/src/app/run.sh
