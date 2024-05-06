@@ -22,7 +22,7 @@ ENV NODE_VERSION 18
 RUN mkdir -p /usr/local/nvm
 
 # Install dependencies
-RUN apt update && apt upgrade -y 
+RUN apt update
 RUN apt install -y wget curl make g++ python3
 RUN apt install -y python3-pip
 
